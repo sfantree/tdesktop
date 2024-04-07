@@ -1,42 +1,6 @@
 name: Windows.
 
-on:
-  push:
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
-      - 'changelog.txt'
-      - 'LEGAL'
-      - 'LICENSE'
-      - '.github/**'
-      - '!.github/workflows/win.yml'
-      - 'lib/xdg/**'
-      - 'snap/**'
-      - 'Telegram/build/docker/**'
-      - 'Telegram/Resources/uwp/**'
-      - 'Telegram/SourceFiles/platform/linux/**'
-      - 'Telegram/SourceFiles/platform/mac/**'
-      - 'Telegram/Telegram/**'
-      - 'Telegram/configure.sh'
-      - 'Telegram/Telegram.plist'
-  pull_request:
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
-      - 'changelog.txt'
-      - 'LEGAL'
-      - 'LICENSE'
-      - '.github/**'
-      - '!.github/workflows/win.yml'
-      - 'lib/xdg/**'
-      - 'snap/**'
-      - 'Telegram/build/docker/**'
-      - 'Telegram/Resources/uwp/**'
-      - 'Telegram/SourceFiles/platform/linux/**'
-      - 'Telegram/SourceFiles/platform/mac/**'
-      - 'Telegram/Telegram/**'
-      - 'Telegram/configure.sh'
-      - 'Telegram/Telegram.plist'
+on: workflow_dispatch
 
 jobs:
 
@@ -46,8 +10,8 @@ jobs:
 
     strategy:
       matrix:
-        arch: [Win32, x64]
-        generator: ["", "Ninja Multi-Config"]
+        arch: [Win32]
+        generator: [""]
 
     env:
       UPLOAD_ARTIFACT: "true"
@@ -156,7 +120,6 @@ jobs:
       - name: Free up some disk space.
         run: |
           cd %TBUILD%
-          del /S Libraries\*.pdb
           del /S Libraries\*.pch
           del /S Libraries\*.obj
 
@@ -171,7 +134,7 @@ jobs:
           %TDESKTOP_BUILD_API% ^
           -D DESKTOP_APP_DISABLE_AUTOUPDATE=OFF ^
           -D DESKTOP_APP_DISABLE_CRASH_REPORTS=OFF ^
-          -D DESKTOP_APP_NO_PDB=ON ^
+          -D DESKTOP_APP_NO_PDB=OFF ^
           %TDESKTOP_BUILD_DEFINE%
 
           cmake --build ..\out --config Debug --parallel
@@ -181,8 +144,11 @@ jobs:
         run: |
           set OUT=%TBUILD%\%REPO_NAME%\out\Debug
           mkdir artifact
+          mkdir artifact\Libraries
+          move %TBUILD%\Libraries\*.pdb artifact\Libraries/
           move %OUT%\Telegram.exe artifact/
           move %OUT%\Updater.exe artifact/
+          move %OUT%\*.pdb artifact/
       - uses: actions/upload-artifact@master
         name: Upload artifact.
         if: (env.UPLOAD_ARTIFACT == 'true') || (github.ref == 'refs/heads/nightly')
